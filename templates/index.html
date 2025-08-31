@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Image Steganography</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* BODY & BACKGROUND */
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(-25deg, #0a0a0f, #13114f, #0a0a0f, #0a0a0f);
+      background-size: 400% 400%;
+      animation: gradientBG 18s ease infinite;
+      color: #fff;
+      overflow-x: hidden;
+      overflow-y: auto;
+      /* ✅ allow scroll */
+      position: relative;
+      font-family: Arial, sans-serif;
+    }
+
+    /* OUTER BOX */
+    .outer-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+      margin: 40px auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 1200px;
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes gradientBG {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* STARFIELD LAYER */
+    .stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      /* default small size */
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.9),
+        0 0 12px rgba(255, 255, 255, 0.6);
+      opacity: 0.8;
+    }
+
+    /* Shining / Twinkling stars */
+    .star.twinkle {
+      animation: twinkle 3s infinite ease-in-out;
+    }
+
+    .star.twinkle:nth-child(odd) {
+      animation-duration: 2.5s;
+      animation-delay: 1s;
+    }
+
+    .star.twinkle:nth-child(even) {
+      animation-duration: 4s;
+      animation-delay: 0.5s;
+    }
+
+    @keyframes twinkle {
+
+      0%,
+      100% {
+        opacity: 0.3;
+        transform: scale(0.6);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* NAVBAR OUTER BOX */
+    .navbar-box {
+      display: flex;
+      justify-content: center;
+      margin: 20px auto;
+      padding: 5px 5px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      /* transparent box */
+      box-shadow: 0 4px 15px rgba(96, 165, 250, 0.7);
+      width: fit-content;
+      z-index: 2;
+      position: relative;
+    }
+
+    /* CENTERED NAVBAR */
+    .custom-navbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: 8px;
+      flex-wrap: wrap;
+      z-index: 2;
+      position: relative;
+    }
+
+    .nav-item {
+      padding: 8px 14px;
+      border: 1px solid #666;
+      border-radius: 25px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .nav-item.active {
+      background: #fff;
+      /* White background */
+      color: #000;
+      /* Black text for contrast */
+      font-weight: bold;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* SECTIONS */
+    .section {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.7s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .section.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0px);
+    }
+
+    .stego-image {
+      display: block;
+      margin: 30px;
+      max-width: 70%;
+      border: 1px solid #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    /* HEADINGS */
+    h3 {
+      color: #60a5fa;
+      text-shadow: 0px 0px 15px rgba(96, 165, 250, 0.7);
+      margin-bottom: 20px;
+      margin-top: 20px;
+
+      text-align: center;
+      /* Centers the text */
+      animation: fadeSlideIn 1s ease forwards;
+    }
+
+
+    @keyframes fadeSlideIn {
+      0% {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* FORMS */
+    .form-control {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 12px rgba(96, 165, 250, 0.7);
+      border-color: #60a5fa;
+      color: #fff;
+    }
+
+    /* BUTTONS */
+    .btn-primary,
+    .btn-success,
+    .btn-warning {
+
+      border-radius: 50px;
+      font-weight: bold;
+      transition: all 0.4s ease;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.1);
+      background-color: #2563eb;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.7);
+    }
+
+    .btn-success:hover {
+      transform: scale(1.1);
+      background-color: #16a34a;
+      box-shadow: 0 0 20px rgba(22, 163, 74, 0.7);
+    }
+
+    .btn-warning:hover {
+      transform: scale(1.1);
+      background-color: #f59e0b;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
+    }
+
+    /* IMAGES */
+    img {
+      border-radius: 15px;
+      transition: all 0.5s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    img:hover {
+      transform: scale(1.05) rotate(1deg);
+      box-shadow: 0 15px 30px rgba(96, 165, 250, 0.8);
+    }
+
+    /* METRICS CHART */
+    canvas {
+      border-radius: 15px;
+      background-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      transition: all 0.5s ease;
+      padding: 10px;
+      color: #fff;
+    }
+
+    /* LIST GROUP */
+    .list-group-item {
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .list-group-item:hover {
+      background: rgba(96, 165, 250, 0.3);
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- STARFIELD -->
+  <div class="stars" id="starfield"></div>
+
+
+  <!-- Navbar Outer Box -->
+  <div class="navbar-box">
+    <div class="custom-navbar">
+      <div class="nav-item" onclick="showSection('home', this)">Home</div>
+      <div class="nav-item sender" onclick="showSection('sender', this)">Sender</div>
+      <div class="nav-item" onclick="showSection('receiver', this)">Receiver</div>
+      <div class="nav-item" onclick="showSection('performance', this)">Performance</div>
+      <div class="nav-item" onclick="showSection('description', this)">Description</div>
+
+    </div>
+  </div>
+
+  <!-- Home Section (Default Page) -->
+  <div id="home" class="section {% if active_tab=='home' %}active{% endif %}"
+    style="background:none; box-shadow:none; padding:0; border:none;">
+    <h1 style="
+    text-align:center;
+    margin-top: 80px;
+    font-size: 50px;
+    font-weight: bold;
+    color: #60a5fa;
+    text-shadow: 0px 0px 25px rgba(96,165,250,1);
+">
+      Image Steganography System
+    </h1>
+    <p style="
+    text-align:center;
+    font-size:20px;
+    margin-top: 20px;
+    color: rgba(255,255,255,0.85);
+">
+      Securely hide and extract secret messages inside images using a hybrid LSB + DCT approach with key-based security
+    </p>
+  </div>
+
+
+  <!-- Main Content Box (not shown on Home) -->
+  <div id="main-content" class="outer-box section">
+
+    <!-- Sender -->
+    <div id="sender" class="section {% if active_tab=='sender' %}active{% endif %}">
+      <h3>Sender</h3>
+      <form action="/encode" method="POST" enctype="multipart/form-data">
+        <div class="mb-3"><label class="form-label">Upload Cover Image</label><input type="file" class="form-control"
+            name="image" required></div>
+        <div class="mb-3"><label class="form-label">Secret Message</label><textarea class="form-control" name="message"
+            required></textarea></div>
+        <div class="mb-3"><label class="form-label">Secret Key</label><input type="password" class="form-control"
+            name="key" required></div>
+        <button type="submit" class="btn btn-primary">Embed</button>
+      </form>
+      {% if stego_image %}
+      <div class="mt-3">
+        <h5 style="margin-left: 40px; margin-top: 25px; margin-bottom: 8px; ">
+          Generated Stego Image:
+        </h5>
+        <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;">
+          <img src="{{ url_for('static', filename=stego_image) }}" class="stego-image"
+            style="width:400px; height:auto;">
+          <a href="{{ url_for('download_file', filename=download_link) }}" class="btn btn-success"
+            style="padding:6px 12px; font-size:24px;">
+            Download
+          </a>
+        </div>
+      </div>
+
+      {% endif %}
+    </div>
+
+    <!-- Receiver -->
+    <div id="receiver" class="section {% if active_tab=='receiver' %}active{% endif %}">
+      <h3>Receiver</h3>
+      <form action="/decode" method="POST" enctype="multipart/form-data">
+        <div class="mb-3"><label class="form-label">Upload Stego Image</label><input type="file" class="form-control"
+            name="stego_image" required></div>
+        <div class="mb-3"><label class="form-label">Secret Key</label><input type="password" class="form-control"
+            name="key" required></div>
+        <button type="submit" class="btn btn-success">Extract</button>
+      </form>
+      {% if extracted_message %}
+      <div class="mt-3">
+        <h5>Extracted Message:</h5>
+        <p>{{ extracted_message }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Performance -->
+    <div id="performance" class="section {% if active_tab=='performance' %}active{% endif %}">
+      <h3>Performance Metrics</h3>
+      <form action="/performance" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Original Image</label>
+          <input type="file" class="form-control" name="original_image" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Stego Image</label>
+          <input type="file" class="form-control" name="stego_image" required>
+        </div>
+        <button type="submit" class="btn btn-warning">Evaluate</button>
+      </form>
+
+      {% if metrics %}
+      <div class="mt-4">
+        <div class="container mt-5 mb-5"> <!-- Added top & bottom margin -->
+          <div class="card shadow p-4"
+            style="border-radius: 12px; border: 1px solid #ddd; background: rgba(255, 255, 255, 0.12);">
+            <div class="row">
+
+              <!-- Original Image Section -->
+              <div class="col-md-6 text-center" style="border-right: 1px solid #ccc;">
+                <h5 style="color:white;">Original Image</h5>
+                <img src="{{ url_for('static', filename=original_image) }}" class="img-fluid rounded shadow"
+                  style="max-height:300px;">
+              </div>
+
+              <!-- Stego Image Section -->
+              <div class="col-md-6 text-center">
+                <h5 style="color:white;">Stego Image</h5>
+                <img src="{{ url_for('static', filename=stego_image) }}" class="img-fluid rounded shadow"
+                  style="max-height:300px;">
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Metrics + Chart -->
+        <div class="row">
+          <div class="col-md-6">
+            <h5 class="text-center text-info mb-3">📊 Metrics Table</h5>
+            <ul class="list-group">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>MSE</span><span>{{ "%.6f"|format(metrics["MSE"]) }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>PSNR</span><span>{{ "%.3f"|format(metrics["PSNR"]) }} dB</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>SSIM</span><span>{{ "%.4f"|format(metrics["SSIM"]) }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-md-6">
+            <h5 class="text-center text-info mb-3">📈 Metrics Chart</h5>
+            <canvas id="metricsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+          (function () {
+            const labels = ['MSE', 'PSNR', 'SSIM'];
+            const values = {{ [metrics["MSE"], metrics["PSNR"], metrics["SSIM"]] | tojson
+          }};
+          const ctx = document.getElementById('metricsChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Performance Metrics',
+                data: values,
+                backgroundColor: ['#3b82f6', '#8b5cf6', '#06b6d4']
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  titleColor: '#fff',
+                  bodyColor: '#fff',
+                  backgroundColor: 'rgba(0,0,0,0.7)'
+                }
+              },
+              scales: {
+                x: {
+                  ticks: { color: '#fff' },
+                  grid: { color: 'rgba(255,255,255,0.2)' }
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: { color: '#fff' },
+                  grid: { color: 'rgba(255,255,255,0.2)' }
+                }
+              }
+            }
+          });
+      }) ();
+        </script>
+      </div>
+      {% endif %}
+    </div>
+
+
+    <!-- Description (replace your existing Description div with this) -->
+    <div id="description" class="section">
+      <div style="background: rgba(255,255,255,0.06); padding: 22px; border-radius: 15px; color: white;">
+        <h3 style="color:#60a5fa; text-shadow:0 0 10px rgba(96,165,250,0.7);">🔐 About This Image Steganography System
+        </h3>
+
+        <p>
+          This system lets you hide secret text inside ordinary images so the message is invisible to casual viewers.
+          The image that contains the hidden text is called the <strong>stego image</strong>. Visually it looks almost
+          identical to the original, but it stores the secret in a way that can be recovered later using the same secret
+          key.
+        </p>
+
+        <h4 style="margin-top:17px; color:#60a5fa;">How the message is stored</h4>
+        <p>
+          The project uses a <strong>hybrid embedding</strong> method that combines two complementary techniques:
+        </p>
+        <ul>
+          <li><strong>LSB (Least Significant Bit)</strong> — Some message bits are written directly into the
+            least-significant
+            bits of image pixels. Changing these bits alters pixel values so slightly that the human eye cannot perceive
+            the change,
+            allowing high-capacity, low-visibility storage.</li>
+          <li><strong>DCT (Discrete Cosine Transform)</strong> — Remaining bits are embedded into frequency coefficients
+            of 8×8
+            blocks (the same kind of transform used in image compression). Embedding in the DCT domain increases
+            robustness
+            (the hidden data survives transformations and compression better than naive LSB-only embedding).</li>
+        </ul>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Where the data goes (overview)</h4>
+        <p>
+          The system splits the binary message into two parts. The first part is hidden using LSBs of one color channel,
+          while the second part is encoded in DCT coefficients of another channel. This hybrid layout balances capacity
+          and robustness:
+          LSB stores more bits quickly and DCT protects the remainder from lossy operations.
+        </p>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Role of the Secret Key</h4>
+        <p>
+          In this project, the <b>secret key</b> is an important security feature. It ensures that only authorized users
+          can
+          successfully hide and extract messages from an image:
+        </p>
+        <ul>
+          <li>The secret key is required during both <b>embedding</b> (hiding the message) and <b>extraction</b>
+            (retrieving the message).</li>
+          <li>If the wrong key is entered while extracting, the system will not reveal the hidden message.</li>
+          <li>This provides an additional layer of security, so even if someone has the stego image, they cannot read
+            the hidden information without the correct key.</li>
+        </ul>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Extraction process (how the message is recovered)</h4>
+        <ol>
+          <li>The extractor first reads a small fixed-size header from the stego image that encodes the length of the
+            hidden payload.</li>
+          <li>Using that length, it reads the correct number of bits — retrieving the LSB portion first, then the DCT
+            portion.</li>
+          <li>The retrieved bitstream is reassembled into bytes and converted back to text.</li>
+          <li>Finally the marker derived from the secret key is validated. If the marker matches the provided key the
+            recovered text is shown;
+            otherwise the system reports an invalid key.</li>
+        </ol>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Supported image types and quality notes</h4>
+        <p>
+          The tool works with common raster image formats such as PNG, JPEG and BMP. Note:
+          <strong>lossy compression (e.g., saving as a low-quality JPEG)</strong> may alter LSBs. Because part of the
+          message is stored in DCT coefficients,
+          that portion survives some compression better than plain LSB, but for maximum reliability prefer lossless
+          formats (PNG) for the final stego image.
+        </p>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Performance metrics (how quality is measured)</h4>
+        <p>
+          After embedding you can view three standard image-quality metrics that quantify how much the stego image
+          differs from the original:
+        </p>
+        <ul>
+          <li><strong>MSE (Mean Squared Error)</strong> — average squared difference per pixel between the original and
+            stego image. Lower is better.</li>
+          <li><strong>PSNR (Peak Signal-to-Noise Ratio)</strong> — derived from MSE and expressed in decibels. Higher
+            values mean higher visual fidelity; typical acceptable values are >30dB.</li>
+          <li><strong>SSIM (Structural Similarity Index)</strong> — measures perceived structural similarity (contrast,
+            luminance and structure). Values closer to 1 indicate higher perceptual similarity.</li>
+        </ul>
+
+        <h4 style="margin-top:15px; color:#60a5fa;">Security & best practices</h4>
+        <ul>
+          <li>Always share the secret key out-of-band (don’t embed it inside the image).</li>
+          <li>For highest reliability, save final stego images in a lossless format (PNG).</li>
+          <li>Keep messages reasonably short relative to image size — capacity depends on image resolution and the
+            hybrid split.</li>
+        </ul>
+
+        <p style="margin-top:15px; ">
+          This site provides a simple, visual way to hide and recover text using the hybrid LSB+DCT method: high
+          capacity from LSB plus
+          improved robustness from DCT, plus a key-based marker to prevent unauthorized extraction.
+        </p>
+      </div>
+    </div>
+
+
+    <script>
+      function showSection(section, element) {
+        // Hide all sections inside main-content
+        document.querySelectorAll('#main-content .section').forEach(div => div.classList.remove('active'));
+
+        // Hide both big containers first
+        document.getElementById("home").classList.remove("active");
+        document.getElementById("main-content").classList.remove("active");
+
+        // Reset navbar active state
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+
+        if (section === 'home') {
+          // Show home
+          document.getElementById("home").classList.add("active");
+          element.classList.add("active");   // ✅ highlight Home tab too
+        }
+        else {
+          // Show main-content and the selected tab
+          document.getElementById("main-content").classList.add("active");
+          document.getElementById(section).classList.add("active");
+          element.classList.add("active");
+        }
+      }
+
+
+
+
+      // Generate random stars
+      const starfield = document.getElementById("starfield");
+      for (let i = 0; i < 100; i++) {
+        const star = document.createElement("div");
+        star.classList.add("star");
+        if (Math.random() > 0.5) star.classList.add("twinkle");
+        star.style.top = Math.random() * 100 + "vh";
+        star.style.left = Math.random() * 100 + "vw";
+        star.style.width = star.style.height = (Math.random() * 2 + 1) + "px";
+        starfield.appendChild(star);
+      }
+    </script>
+    <script>
+      // Auto-show the correct section based on Flask's active_tab
+      const activeTab = "{{ active_tab|default('home') }}";
+      if (activeTab) {
+        // Find the matching navbar button
+        const navBtn = document.querySelector(`.nav-item[onclick*="${activeTab}"]`);
+        if (navBtn) {
+          showSection(activeTab, navBtn);
+        } else {
+          showSection('home'); // fallback
+        }
+      }
+    </script>
+
+
+</body>
+
+</html>
