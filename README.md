@@ -27,19 +27,16 @@ It’s a simple and effective way to keep your data private.
 ## **How to Run**  
 
 **Clone the repository:**  
-
 git clone https://github.com/Akshathajogi/Image-Steganography.git  
 cd Image-Steganography
 
 Install dependencies:
-
 pip install -r requirements.txt
 
 
 Run the app:
-
-bash
 python app.py
+
 Open in your browser:
 http://127.0.0.1:5000
 
@@ -49,4 +46,5 @@ http://127.0.0.1:5000
 
 - Only **PNG images** are supported
 - Keep your **secret key** safe
+
 
